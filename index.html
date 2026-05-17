@@ -398,8 +398,10 @@
         });
 
         // Monitoramento da Fila ao Vivo
+       // --- Monitoramento da Fila ao Vivo Agrupada por Coordenador ---
         function escutarAgendamentosTempoReal() {
             if(unsubscribeAtendimentos) unsubscribeAtendimentos();
+            
             const q = query(collection(db, "agendamentos"), where("status", "==", "pendente"));
             const container = document.getElementById('lista-atendimentos-pendentes');
 
@@ -408,31 +410,71 @@
                     container.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum aluno aguardando no momento. Bom trabalho!</p>';
                     return;
                 }
+
                 container.innerHTML = '';
+
+                // 1. Agrupar os agendamentos por Coordenador na memória
+                const filasPorCoordenador = {};
+
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const id = docSnap.id;
-                    const coordName = coordenadoresCache.find(c => c.id === data.coordenadorId)?.nome || "Não identificado";
-                    const assuntoTxt = data.categoria ? ` | Assunto: ${data.categoria}` : '';
+                    const coordId = data.coordenadorId || "nao_alocado";
 
-                    const card = document.createElement('div');
-                    card.className = "p-4 border rounded-xl bg-amber-50 border-amber-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4";
-                    card.innerHTML = `
-                        <div>
-                            <span class="text-xs font-bold uppercase tracking-wider bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">Aguardando</span>
-                            <h4 class="font-bold text-lg text-gray-900 mt-1">${data.alunoNome} <span class="text-sm font-normal text-gray-500">(RA: ${data.alunoRA})${assuntoTxt}</span></h4>
-                            <p class="text-xs text-gray-600 mt-0.5">Destinado ao Coordenador: <strong class="text-gray-800">${coordName}</strong></p>
-                        </div>
-                        <div class="w-full md:w-auto flex flex-col gap-2">
-                            <textarea id="note-${id}" placeholder="Escreva as anotações..." class="w-full md:w-64 p-2 text-sm bg-white border rounded resize-none h-16"></textarea>
-                            <button onclick="finalizarAtendimento('${id}')" class="bg-emerald-600 text-white font-bold text-xs px-3 py-2 rounded-lg hover:bg-emerald-700 transition">Finalizar</button>
+                    if (!filasPorCoordenador[coordId]) {
+                        filasPorCoordenador[coordId] = [];
+                    }
+                    filasPorCoordenador[coordId].push({ id, ...data });
+                });
+
+                // 2. Renderizar as filas separadamente na tela
+                for (const coordId in filasPorCoordenador) {
+                    // Descobre o nome do coordenador dono desta fila
+                    const coordName = coordenadoresCache.find(c => c.id === coordId)?.nome || "Coordenador Não Identificado";
+                    const agendamentosDoCoord = filasPorCoordenador[coordId];
+
+                    // Cria um container/bloco visual para a fila deste coordenador
+                    const secaoCoordenador = document.createElement('div');
+                    secaoCoordenador.className = "mb-6 border-l-4 border-blue-500 pl-4 bg-white p-4 rounded-r-xl shadow-xs space-y-3";
+                    
+                    // Cabeçalho com o nome do Coordenador e o total de alunos na fila dele
+                    secaoCoordenador.innerHTML = `
+                        <div class="flex justify-between items-center border-b pb-2 mb-2">
+                            <h3 class="font-bold text-gray-800 text-base flex items-center gap-2">
+                                👨‍🏫 Fila de: <span class="text-blue-700">${coordName}</span>
+                            </h3>
+                            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                                ${agendamentosDoCoord.length} ${agendamentosDoCoord.length === 1 ? 'aluno' : 'alunos'}
+                            </span>
                         </div>
                     `;
-                    container.appendChild(card);
-                });
+
+                    // Renderiza cada card de aluno pertencente a este coordenador específico
+                    agendamentosDoCoord.forEach((data) => {
+                        const assuntoTxt = data.categoria ? ` | Assunto: ${data.categoria}` : '';
+                        
+                        const cardAluno = document.createElement('div');
+                        cardAluno.className = "p-3 border rounded-lg bg-amber-50/50 border-amber-200/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-sm";
+                        cardAluno.innerHTML = `
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">Aguardando</span>
+                                <h4 class="font-bold text-gray-900 mt-1">${data.alunoNome} <span class="text-xs font-normal text-gray-500">(RA: ${data.alunoRA})${assuntoTxt}</span></h4>
+                            </div>
+                            <div class="w-full md:w-auto flex flex-col gap-2">
+                                <textarea id="note-${data.id}" placeholder="Escreva as anotações..." class="w-full md:w-64 p-2 text-xs bg-white border rounded shadow-inner resize-none h-14 outline-none focus:border-emerald-500"></textarea>
+                                <div class="flex gap-2 justify-end">
+                                    <button onclick="finalizarAtendimento('${data.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition">Finalizar</button>
+                                    <button onclick="excluirAgendamento('${data.id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition">Excluir 🗑️</button>
+                                </div>
+                            </div>
+                        `;
+                        secaoCoordenador.appendChild(cardAluno);
+                    });
+
+                    container.appendChild(secaoCoordenador);
+                }
             });
         }
-
         window.finalizarAtendimento = async function(id) {
             const anotacoes = document.getElementById(`note-${id}`).value;
             if(!anotacoes.trim()) { alert("Insira alguma orientação antes de finalizar."); return; }
