@@ -1,0 +1,16 @@
+{
+  "name": "Coordenação Conecta",
+  "short_name": "CoordConecta",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2211/2211617.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

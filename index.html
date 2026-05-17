@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimento Coordenação - Vila Mariana - São Paulo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <header class="bg-blue-600 text-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-1.5 rounded-lg flex items-center justify-center w-12 h-12 shadow-inner">
+    <img src="logo.png" alt="Logo Faculdade" id="faculdade-logo" class="max-w-full max-h-full object-contain">
+</div>
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                     Atendimento Coordenação - Vila Mariana - São Paulo
+                </h1>
+            </div>
+           <nav class="flex gap-2" id="nav-principal">
+                <button onclick="switchView('aluno')" class="px-3 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-sm font-medium transition">Aluno</button>
+                
+                <button id="btn-nav-coordenador" onclick="switchView('coordenador')" class="hidden px-3 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-sm font-medium transition">Coordenador</button>
+                <button id="btn-nav-dashboard" onclick="switchView('dashboard')" class="hidden px-3 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-sm font-medium transition">📊 Dashboard</button>
+                <button id="btn-nav-admin" onclick="switchView('admin')" class="hidden px-3 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-sm font-medium transition">Admin</button>
+                
+                <button onclick="fazerLoginRestrito()" id="btn-login-restrito" class="px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-900 text-sm font-medium transition flex items-center gap-1">
+                    🔐 Restrito
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 max-w-4xl min-h-[calc(100vh-80px)]">
+
+        <section id="view-aluno" class="view-section space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Solicitar Atendimento</h2>
+                <form id="form-agendamento" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Seu Nome completo</label>
+                            <input type="text" id="aluno-nome" required class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">RA / Matrícula</label>
+                            <input type="text" id="aluno-ra" required class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Seu Curso</label>
+                            <select id="aluno-curso" required onchange="loadCoordenadoresPorCurso(this.value)" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">Selecione o curso...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Coordenador disponível</label>
+                            <select id="aluno-coordenador" required class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">Selecione o coordenador...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Categoria / Assunto</label>
+                            <select id="aluno-categoria" required class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">Selecione um assunto...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition">
+                        Confirmar Agendamento e Notificar Coordenador
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold mb-3 text-gray-900">Acompanhar meu Atendimento</h3>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="search-ra" placeholder="Digite seu RA para buscar" class="flex-1 p-2 border rounded-lg">
+                    <button onclick="buscarAtendimentoAluno()" class="bg-gray-800 text-white px-4 rounded-lg hover:bg-gray-900">Buscar</button>
+                </div>
+                <div id="resultado-busca-aluno" class="hidden p-4 border rounded-lg bg-gray-50"></div>
+            </div>
+        </section>
+
+        <section id="view-coordenador" class="view-section hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Painel de Atendimento</h2>
+                <p class="text-sm text-gray-500 mb-4">Os novos agendamentos aparecem aqui em tempo real.</p>
+                <div class="space-y-4" id="lista-atendimentos-pendentes">
+                    <p class="text-gray-500 text-center py-4">Nenhum aluno na fila de espera no momento.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-dashboard" class="view-section hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Métricas da Coordenação</h2>
+                <p class="text-sm text-gray-500 mb-6">Gráficos analíticos consolidados em tempo real.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 border rounded-xl bg-gray-50 flex flex-col items-center">
+                        <h4 class="font-bold text-gray-700 mb-4 text-center">Atendimentos por Categoria</h4>
+                        <div class="w-full max-w-[280px]">
+                            <canvas id="chartCategorias"></canvas>
+                        </div>
+                    </div>
+                    <div class="p-4 border rounded-xl bg-gray-50 flex flex-col items-center">
+                        <h4 class="font-bold text-gray-700 mb-4 text-center">Status dos Agendamentos</h4>
+                        <div class="w-full max-w-[280px]">
+                            <canvas id="chartStatus"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-admin" class="view-section hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Configurações do Sistema (Admin)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h3 class="font-bold mb-2 text-blue-800">1. Cadastrar Curso</h3>
+                        <form id="form-curso" class="space-y-2">
+                            <input type="text" id="nome-curso" placeholder="Nome do Curso" required class="w-full p-2 border rounded text-sm bg-white">
+                            <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded text-sm hover:bg-blue-700">Salvar Curso</button>
+                        </form>
+                    </div>
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h3 class="font-bold mb-2 text-blue-800">2. Cadastrar Coordenador</h3>
+                        <form id="form-coordenador" class="space-y-2">
+                            <input type="text" id="nome-coord" placeholder="Nome do Coordenador" required class="w-full p-2 border rounded text-sm bg-white">
+                            <input type="email" id="email-coord" placeholder="E-mail" required class="w-full p-2 border rounded text-sm bg-white">
+                            <select id="coord-curso" required class="w-full p-2 border rounded text-sm bg-white">
+                                <option value="">Vincular ao Curso...</option>
+                            </select>
+                            <input type="text" id="horario-coord" placeholder="Horários" required class="w-full p-2 border rounded text-sm bg-white">
+                            <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded text-sm hover:bg-blue-700">Salvar Coordenador</button>
+                        </form>
+                    </div>
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h3 class="font-bold mb-2 text-blue-800">3. Cadastrar Categoria</h3>
+                        <form id="form-categoria" class="space-y-2">
+                            <input type="text" id="nome-categoria" placeholder="Ex: Ajuste de Grade, Dispensa" required class="w-full p-2 border rounded text-sm bg-white">
+                            <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded text-sm hover:bg-blue-700">Salvar Categoria</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+<div class="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+        <div id="painel-voz" class="hidden bg-white p-3 rounded-xl shadow-lg border border-gray-200 text-xs flex items-center gap-2">
+            <button id="btn-velocidade-voz" class="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded font-bold text-gray-700">1.0x</button>
+            <button id="btn-parar-voz" class="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-bold">Parar ⏹️</button>
+        </div>
+        <button id="btn-ouvir-tela" title="Ouvir esta tela" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-105">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+        </button>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCI8GTTZNH3J3tgCmzLBAifLqUY1y-hJeU",
+            authDomain: "atendimentocoor.firebaseapp.com",
+            databaseURL: "https://atendimentocoor-default-rtdb.firebaseio.com",
+            projectId: "atendimentocoor",
+            storageBucket: "atendimentocoor.firebasestorage.app",
+            messagingSenderId: "962194540357",
+            appId: "1:962194540357:web:338b278aac0e553bcca02c",
+            measurementId: "G-ZXX6V2SBJG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let cursosCache = [];
+        let coordenadoresCache = [];
+        let categoriasCache = [];
+        let chart1 = null;
+        let chart2 = null;
+        let unsubscribeAtendimentos = null;
+
+        // Tornando as abas visíveis no escopo global de forma correta
+        // --- DEFINIÇÃO DE SENHAS DE ACESSO ---
+        // Altere as strings abaixo para as senhas que desejar utilizar no ambiente real
+        const SENHA_COORDENADOR = "coord123";
+        const SENHA_ADMIN = "admin123";
+
+        // Gerenciador de Abas Expandido com Trava de Segurança Interna
+        window.switchView = function(view) {
+            // Se tentar forçar a entrada por console em abas protegidas sem estar visível
+            if ((view === 'coordenador' || view === 'dashboard') && document.getElementById('btn-nav-coordenador').classList.contains('hidden')) {
+                alert("Acesso negado. Por favor, autentique-se primeiro no botão Restrito.");
+                return;
+            }
+            if (view === 'admin' && document.getElementById('btn-nav-admin').classList.contains('hidden')) {
+                alert("Acesso negado. Por favor, autentique-se primeiro no botão Restrito.");
+                return;
+            }
+
+            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById(`view-${view}`);
+            if (target) target.classList.remove('hidden');
+
+            if(view === 'coordenador') {
+                escutarAgendamentosTempoReal();
+            } else if(view === 'dashboard') {
+                renderizarDashboard();
+            }
+        };
+
+        // Função de Validação de Credenciais por Prompt
+        window.fazerLoginRestrito = function() {
+            const senhaDigitada = prompt("Digite a senha de acesso institucional:");
+            
+            if (!senhaDigitada) return; // Se o usuário cancelar o prompt, não faz nada
+
+            if (senhaDigitada === SENHA_ADMIN) {
+                // Senha Master (Admin): Libera absolutamente tudo do sistema
+                document.getElementById('btn-nav-coordenador').classList.remove('hidden');
+                document.getElementById('btn-nav-dashboard').classList.remove('hidden');
+                document.getElementById('btn-nav-admin').classList.remove('hidden');
+                
+                // Transforma o botão restrito em um botão de "Sair/Logout"
+                configurarBotãoLogout();
+                
+                // Redireciona o Administrador direto para a tela de configurações dele
+                window.switchView('admin');
+                alert("Autenticado como Administrador. Painel completo liberado.");
+            } 
+            else if (senhaDigitada === SENHA_COORDENADOR) {
+                // Senha do Coordenador: Libera apenas o Painel de Atendimentos e o Dashboard matemático
+                document.getElementById('btn-nav-coordenador').classList.remove('hidden');
+                document.getElementById('btn-nav-dashboard').classList.remove('hidden');
+                
+                // Garante que a aba do Admin permaneça estritamente oculta para o coordenador
+                document.getElementById('btn-nav-admin').classList.add('hidden');
+                
+                configurarBotãoLogout();
+                
+                // Redireciona o Coordenador direto para a Fila de Atendimento ao Vivo
+                window.switchView('coordenador');
+                alert("Autenticado como Coordenador. Fila de atendimento liberada.");
+            } 
+            else {
+                alert("Senha incorreta! Acesso estritamente recusado.");
+            }
+        };
+
+        function configurarBotãoLogout() {
+            const btn = document.getElementById('btn-login-restrito');
+            btn.innerHTML = "🔓 Sair";
+            btn.className = "px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-sm font-medium transition flex items-center gap-1";
+            btn.onclick = function() {
+                // Função de Logout: Oculta as abas de volta e limpa a sessão visual
+                document.getElementById('btn-nav-coordenador').classList.add('hidden');
+                document.getElementById('btn-nav-dashboard').classList.add('hidden');
+                document.getElementById('btn-nav-admin').classList.add('hidden');
+                
+                // Restaura o botão original de login
+                btn.innerHTML = "🔐 Restrito";
+                btn.className = "px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-900 text-sm font-medium transition flex items-center gap-1";
+                btn.onclick = function() { fazerLoginRestrito(); };
+                
+                // Devolve o sistema de volta para a tela limpa do aluno
+                window.switchView('aluno');
+                alert("Sessão encerrada com sucesso.");
+            };
+        }
+        async function init() {
+            try {
+                await carregarCursos();
+                await carregarCoordenadores();
+                await carregarCategorias();
+            } catch(e) { console.error("Erro na carga inicial:", e); }
+        }
+        init();
+
+        // Operações de Escrita (Formulários)
+        document.getElementById('form-curso').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('nome-curso').value.trim();
+            if(!nome) return;
+            try {
+                await addDoc(collection(db, "cursos"), { nome });
+                alert("Curso adicionado com sucesso!");
+                document.getElementById('form-curso').reset();
+                await carregarCursos();
+            } catch (err) { console.error(err); }
+        });
+
+        document.getElementById('form-coordenador').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('nome-coord').value;
+            const email = document.getElementById('email-coord').value;
+            const cursoId = document.getElementById('coord-curso').value;
+            const horarios = document.getElementById('horario-coord').value;
+            try {
+                await addDoc(collection(db, "coordenadores"), { nome, email, cursoId, horarios });
+                alert("Coordenador cadastrado com sucesso!");
+                document.getElementById('form-coordenador').reset();
+                await carregarCoordenadores();
+            } catch (err) { console.error(err); }
+        });
+
+        document.getElementById('form-categoria').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('nome-categoria').value.trim();
+            if(!nome) return;
+            try {
+                await addDoc(collection(db, "categorias"), { nome });
+                alert("Categoria adicionada com sucesso!");
+                document.getElementById('form-categoria').reset();
+                await carregarCategorias();
+            } catch (err) { console.error(err); }
+        });
+
+        // Operações de Leitura (Carregadores)
+        async function carregarCursos() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "cursos"));
+                cursosCache = [];
+                querySnapshot.forEach(doc => cursosCache.push({id: doc.id, ...doc.data()}));
+                
+                const selectAluno = document.getElementById('aluno-curso');
+                const selectAdmin = document.getElementById('coord-curso');
+                if(selectAluno && selectAdmin) {
+                    const options = text => `<option value="">${text}</option>` + cursosCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                    selectAluno.innerHTML = options("Selecione seu curso...");
+                    selectAdmin.innerHTML = options("Vincular ao Curso...");
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function carregarCoordenadores() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "coordenadores"));
+                coordenadoresCache = [];
+                querySnapshot.forEach(doc => coordenadoresCache.push({id: doc.id, ...doc.data()}));
+            } catch(e) { console.error(e); }
+        }
+
+        async function carregarCategorias() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "categorias"));
+                categoriasCache = [];
+                querySnapshot.forEach(doc => categoriasCache.push({id: doc.id, ...doc.data()}));
+                
+                const selectAlunoCat = document.getElementById('aluno-categoria');
+                if(selectAlunoCat) {
+                    selectAlunoCat.innerHTML = '<option value="">Selecione um assunto...</option>' + 
+                        categoriasCache.map(c => `<option value="${c.name || c.nome}">${c.name || c.nome}</option>`).join('');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        window.loadCoordenadoresPorCurso = function(cursoId) {
+            const select = document.getElementById('aluno-coordenador');
+            const filtrados = coordenadoresCache.filter(c => c.cursoId === cursoId);
+            if(filtrados.length === 0) {
+                select.innerHTML = '<option value="">Nenhum coordenador para este curso</option>';
+                return;
+            }
+            select.innerHTML = '<option value="">Escolha seu coordenador...</option>' + 
+                filtrados.map(c => `<option value="${c.id}">${c.nome} (${c.horarios})</option>`).join('');
+        };
+
+        // Solicitar Atendimento
+        document.getElementById('form-agendamento').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const alunoNome = document.getElementById('aluno-nome').value;
+            const alunoRA = document.getElementById('aluno-ra').value;
+            const cursoId = document.getElementById('aluno-curso').value;
+            const coordenadorId = document.getElementById('aluno-coordenador').value;
+            const categoria = document.getElementById('aluno-categoria').value;
+            const coordObj = coordenadoresCache.find(c => c.id === coordenadorId);
+
+            try {
+                await addDoc(collection(db, "agendamentos"), {
+                    alunoNome, alunoRA, cursoId, coordenadorId, categoria,
+                    status: "pendente", anotacoesCoordenador: "", dataHora: new Date().toISOString()
+                });
+
+                const assunto = encodeURIComponent(`[Novo Atendimento] Aluno na Fila: ${alunoNome}`);
+                const corpo = encodeURIComponent(`Olá, o aluno(a) ${alunoNome} (RA: ${alunoRA}) solicitou atendimento para tratar sobre "${categoria}".\nAcesse o painel para iniciar.`);
+                alert("Agendamento efetuado! Enviando alerta de e-mail.");
+                window.location.href = `mailto:${coordObj.email}?subject=${assunto}&body=${corpo}`;
+                document.getElementById('form-agendamento').reset();
+            } catch (err) { console.error(err); }
+        });
+
+        // Monitoramento da Fila ao Vivo
+        function escutarAgendamentosTempoReal() {
+            if(unsubscribeAtendimentos) unsubscribeAtendimentos();
+            const q = query(collection(db, "agendamentos"), where("status", "==", "pendente"));
+            const container = document.getElementById('lista-atendimentos-pendentes');
+
+            unsubscribeAtendimentos = onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum aluno aguardando no momento. Bom trabalho!</p>';
+                    return;
+                }
+                container.innerHTML = '';
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const id = docSnap.id;
+                    const coordName = coordenadoresCache.find(c => c.id === data.coordenadorId)?.nome || "Não identificado";
+                    const assuntoTxt = data.categoria ? ` | Assunto: ${data.categoria}` : '';
+
+                    const card = document.createElement('div');
+                    card.className = "p-4 border rounded-xl bg-amber-50 border-amber-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4";
+                    card.innerHTML = `
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">Aguardando</span>
+                            <h4 class="font-bold text-lg text-gray-900 mt-1">${data.alunoNome} <span class="text-sm font-normal text-gray-500">(RA: ${data.alunoRA})${assuntoTxt}</span></h4>
+                            <p class="text-xs text-gray-600 mt-0.5">Destinado ao Coordenador: <strong class="text-gray-800">${coordName}</strong></p>
+                        </div>
+                        <div class="w-full md:w-auto flex flex-col gap-2">
+                            <textarea id="note-${id}" placeholder="Escreva as anotações..." class="w-full md:w-64 p-2 text-sm bg-white border rounded resize-none h-16"></textarea>
+                            <button onclick="finalizarAtendimento('${id}')" class="bg-emerald-600 text-white font-bold text-xs px-3 py-2 rounded-lg hover:bg-emerald-700 transition">Finalizar</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        window.finalizarAtendimento = async function(id) {
+            const anotacoes = document.getElementById(`note-${id}`).value;
+            if(!anotacoes.trim()) { alert("Insira alguma orientação antes de finalizar."); return; }
+            try {
+                await updateDoc(doc(db, "agendamentos", id), { status: "finalizado", anotacoesCoordenador: anotacoes });
+                alert("Atendimento encerrado com sucesso.");
+            } catch (err) { console.error(err); }
+        };
+
+        // Renderização dos Gráficos
+        async function renderizarDashboard() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "agendamentos"));
+                let totalStatus = { pendente: 0, finalizado: 0 };
+                let totalCategorias = {};
+
+                querySnapshot.forEach(docSnap => {
+                    const item = docSnap.data();
+                    if(totalStatus[item.status] !== undefined) totalStatus[item.status]++;
+                    const cat = item.categoria || "Não Definido";
+                    totalCategorias[cat] = (totalCategorias[cat] || 0) + 1;
+                });
+
+                if(chart1) chart1.destroy();
+                if(chart2) chart2.destroy();
+
+                chart1 = new Chart(document.getElementById('chartCategorias').getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(totalCategorias),
+                        datasets: [{ data: Object.values(totalCategorias), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                });
+
+                chart2 = new Chart(document.getElementById('chartStatus').getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: ['Em Fila', 'Concluídos'],
+                        datasets: [{ data: [totalStatus.pendente, totalStatus.finalizado], backgroundColor: ['#f59e0b', '#10b981'] }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // Acompanhamento Aluno
+        window.buscarAtendimentoAluno = async function() {
+            const ra = document.getElementById('search-ra').value.trim();
+            const box = document.getElementById('resultado-busca-aluno');
+            if(!ra) return;
+            box.classList.remove('hidden');
+            box.innerHTML = '<p class="text-gray-500 text-sm">Pesquisando...</p>';
+
+            try {
+                const querySnapshot = await getDocs(query(collection(db, "agendamentos"), where("alunoRA", "==", ra)));
+                if(querySnapshot.empty) { box.innerHTML = '<p class="text-red-500 text-sm font-semibold">Nenhum histórico encontrado.</p>'; return; }
+                box.innerHTML = '<h4 class="font-bold border-b pb-2 mb-3 text-sm text-gray-700 uppercase">Histórico</h4>';
+                querySnapshot.forEach(docSnap => {
+                    const d = docSnap.data();
+                    const statusColor = d.status === 'finalizado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+                    const catTxt = d.categoria ? ` | Assunto: ${d.categoria}` : '';
+                    const item = document.createElement('div');
+                    item.className = "mb-4 p-3 rounded bg-white border border-gray-100";
+                    item.innerHTML = `
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}">${d.status === 'finalizado' ? 'Concluído' : 'Na fila'}</span>
+                            <span class="text-xs text-gray-600 font-medium">${catTxt}</span>
+                        </div>
+                        <p class="text-sm"><strong>Notas:</strong> ${d.anotacoesCoordenador || '<span class="text-gray-400 italic">Aguardando início.</span>'}</p>
+                    `;
+                    box.appendChild(item);
+                });
+            } catch(e) { console.error(e); }
+// --- RECURSO DE ACESSIBILIDADE: LEITURA DE TELA POR VOZ (MÓDULO SEGURO) ---
+        let velocidadeVoz = 1.0;
+
+        function alterarVelocidadeVoz() {
+            if (velocidadeVoz === 1.0) velocidadeVoz = 1.5;
+            else if (velocidadeVoz === 1.5) velocidadeVoz = 2.0;
+            else velocidadeVoz = 1.0;
+            
+            document.getElementById('btn-velocidade-voz').innerText = velocidadeVoz + 'x';
+            if (window.speechSynthesis.speaking) {
+                ouvirTelaAtiva();
+            }
+        }
+
+        function pararLeituraVoz() {
+            window.speechSynthesis.cancel();
+            document.getElementById('painel-voz').classList.add('hidden');
+        }
+
+        function ouvirTelaAtiva() {
+            window.speechSynthesis.cancel();
+
+            let textoParaLer = "Aba de acessibilidade por voz. ";
+            const secoes = ['aluno', 'coordenador', 'dashboard', 'admin'];
+            let secaoAtiva = 'aluno';
+
+            for (let s of secoes) {
+                const elemento = document.getElementById(`view-${s}`);
+                if (elemento && !elemento.classList.contains('hidden')) {
+                    secaoAtiva = s;
+                    break;
+                }
+            }
+
+            if (secaoAtiva === 'aluno') {
+                textoParaLer += "Você está na tela do aluno. Esta tela possui um formulário para solicitar atendimento e uma seção abaixo para acompanhar o status digitando o seu R A.";
+            } 
+            else if (secaoAtiva === 'coordenador') {
+                const filaPendente = document.getElementById('lista-atendimentos-pendentes').innerText;
+                textoParaLer += "Você está no painel do coordenador. Situação atual da fila: " + filaPendente;
+            } 
+            else if (secaoAtiva === 'dashboard') {
+                textoParaLer += "Você está na tela de métricas da coordenação. Esta tela exibe os gráficos de atendimentos por categoria e status gerais.";
+            } 
+            else if (secaoAtiva === 'admin') {
+                textoParaLer += "Você está nas configurações do sistema como administrador. Esta tela possui formulários para cadastrar cursos, coordenadores e categorias de atendimento.";
+            }
+
+            const utterance = new SpeechSynthesisUtterance(textoParaLer);
+            utterance.lang = 'pt-BR'; 
+            utterance.rate = velocidadeVoz;
+
+            document.getElementById('painel-voz').classList.remove('hidden');
+
+            utterance.onend = function() {
+                document.getElementById('painel-voz').classList.add('hidden');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Atrela as funções diretamente aos elementos assim que o módulo é compilado
+        document.getElementById('btn-ouvir-tela').addEventListener('click', ouvirTelaAtiva);
+        document.getElementById('btn-parar-voz').addEventListener('click', pararLeituraVoz);
+        document.getElementById('btn-velocidade-voz').addEventListener('click', alterarVelocidadeVoz);
+        };
+    </script>
+</body>
+</html>
+
+     
