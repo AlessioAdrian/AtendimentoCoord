@@ -6,7 +6,7 @@
     <title>Atendimento Coordenação - Vila Mariana</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="manifest" href="manifest.json">
+    <link class="manifest" href="manifest.json">
     <meta name="theme-color" content="#71717a">
 </head>
 <body class="bg-stone-100 font-sans text-zinc-800">
@@ -41,7 +41,7 @@
                 
                 <div class="p-4 bg-zinc-50 border border-zinc-300 rounded-xl mb-6 space-y-2">
                     <label class="block text-sm font-bold text-zinc-900">
-                        📌 Antes de iniciar sua solicitação de atendimento, por favor escolha qual o setor desejado:
+                        📌 Antes de iniciar sua solicitação de atendimento, por favor escolha qual the setor desejado:
                     </label>
                     <select id="aluno-setor" required onchange="filtrarSetorAluno(this.value)" class="w-full md:w-1/2 p-2.5 border border-zinc-400 rounded-lg bg-white focus:ring-2 focus:ring-zinc-500 font-medium outline-none">
                         <option value="">Selecione o setor...</option>
@@ -141,7 +141,7 @@
                         <thead class="bg-zinc-100 text-zinc-700 uppercase text-xs">
                             <tr>
                                 <th class="p-3 border-b">Aluno / RA</th>
-                                <th class="p-3 border-b">Setor / Assunto</th>
+                                <th class="p-3 border-b">Telefone / Celular</th> <th class="p-3 border-b">Setor / Assunto</th>
                                 <th class="p-3 border-b">Horário escolhido</th>
                                 <th class="p-3 border-b">Status</th>
                                 <th class="p-3 border-b">Parecer / Notas</th>
@@ -267,7 +267,7 @@
         let cursosCache = [];
         let coordenadoresCache = [];
         let categoriasCache = [];
-        let historicoAgendamentosCache = []; // Cache local para filtros imediatos de histórico
+        let historicoAgendamentosCache = []; 
         let chart1 = null;
         let chart2 = null;
         let unsubscribeAtendimentos = null;
@@ -275,7 +275,6 @@
         const SENHA_COORDENADOR = "coord123";
         const SENHA_ADMIN = "admin123";
 
-        // Montagem Dinâmica das 10 linhas de input de horários
         const containerHorarios = document.getElementById('container-10-horarios');
         for (let i = 1; i <= 10; i++) {
             containerHorarios.innerHTML += `
@@ -408,7 +407,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "cursos", id), { nome });
-                    alert("Curso atualizado com sucesso!");
+                    alert("Curso updated com sucesso!");
                 } else {
                     await addDoc(collection(db, "cursos"), { nome });
                     alert("Curso adicionado!");
@@ -439,7 +438,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "coordenadores", id), { nome, email, cursoId, diaSemana, horarios });
-                    alert("Coordenador updated!");
+                    alert("Coordenador atualizado!");
                 } else {
                     await addDoc(collection(db, "coordenadores"), { nome, email, cursoId, diaSemana, horarios });
                     alert("Coordenador cadastrado!");
@@ -514,7 +513,6 @@
                 </div>
             `).join('') || '<p class="p-2 text-zinc-400 italic">Nenhum coordenador salvo.</p>';
 
-            // Popula também o seletor de filtros da tela do Coordenador
             const filtroSelect = document.getElementById('filtro-historico-coordenador');
             if(filtroSelect) {
                 filtroSelect.innerHTML = '<option value="todos">Todos os Coordenadores</option>' +
@@ -712,7 +710,7 @@
 
         window.finalizarAtendimento = async function(id) {
             const anotacoes = document.getElementById(`note-${id}`).value;
-            if(!anotacoes.trim()) { alert("Insira alguma nota antes."); return; }
+            if(!anotacoes.trim()) { alert("Insira alguma nota antes de encerrar."); return; }
             try {
                 await updateDoc(doc(db, "agendamentos", id), { status: "finalizado", anotacoesCoordenador: anotacoes });
                 alert("Atendimento finalizado!");
@@ -735,7 +733,7 @@
             } catch(e) { console.error(e); }
         };
 
-        // --- SISTEMA DE VISUALIZAÇÃO E FILTRO DO HISTÓRICO GERAL ---
+        // --- VISUALIZAÇÃO E FILTRO DO HISTÓRICO GERAL ---
         window.alternarVisibilidadeHistorico = async function() {
             const box = document.getElementById('box-historico-coordenador');
             box.classList.toggle('hidden');
@@ -746,7 +744,7 @@
 
         async function carregarDadosHistoricoBanco() {
             const corpoTabela = document.getElementById('tabela-historico-corpo');
-            corpoTabela.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-zinc-500">Buscando dados no banco...</td></tr>';
+            corpoTabela.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-zinc-500">Buscando dados no banco...</td></tr>';
             
             try {
                 const snapshot = await getDocs(collection(db, "agendamentos"));
@@ -759,20 +757,19 @@
                     }
                 });
 
-                // Reseta o seletor visual para "todos" sempre que abre a tela
                 document.getElementById('filtro-historico-coordenador').value = "todos";
                 renderizarLinhasTabelaHistorico(historicoAgendamentosCache);
                 
             } catch(e) { console.error(e); }
         }
 
-        // Função responsável por desenhar as linhas filtradas ou globais na tabela
+        // 📝 Função que renderiza a tabela de histórico com a célula do telefone integrada
         function renderizarLinhasTabelaHistorico(listaDados) {
             const corpoTabela = document.getElementById('tabela-historico-corpo');
             corpoTabela.innerHTML = '';
 
             if(listaDados.length === 0) {
-                corpoTabela.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-zinc-400 italic">Nenhum atendimento finalizado localizado para este filtro.</td></tr>';
+                corpoTabela.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-zinc-400 italic">Nenhum atendimento localizado para este filtro.</td></tr>';
                 return;
             }
 
@@ -781,7 +778,7 @@
                 tr.className = "border-b border-zinc-200 hover:bg-zinc-50 text-xs";
                 tr.innerHTML = `
                     <td class="p-3"><strong>${d.alunoNome}</strong><br><span class="text-[10px] text-zinc-500">RA: ${d.alunoRA}</span></td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-200 text-zinc-800">${d.setor}</span><br><span class="text-[11px] font-medium text-zinc-600">${d.categoria}</span></td>
+                    <td class="p-3 text-zinc-700 font-medium">${d.alunoTelefone || '<span class="text-zinc-400 italic">Não informado</span>'}</td> <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-200 text-zinc-800">${d.setor}</span><br><span class="text-[11px] font-medium text-zinc-600">${d.categoria}</span></td>
                     <td class="p-3 text-zinc-600">${d.periodo}</td>
                     <td class="p-3"><span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${d.status === 'finalizado' ? 'bg-zinc-700 text-white' : 'bg-red-100 text-red-800'}">${d.status === 'finalizado' ? 'Concluído' : 'Cancelado'}</span></td>
                     <td class="p-3 italic text-zinc-600 max-w-xs truncate" title="${d.anotacoesCoordenador || ''}">${d.anotacoesCoordenador || 'Sem observações.'}</td>
@@ -790,13 +787,10 @@
             });
         }
 
-        // 🔍 ENGINE DE FILTRAGEM DO HISTÓRICO EM TEMPO REAL
         window.aplicarFiltroTabelaHistorico = function(coordIdAlvo) {
             if(coordIdAlvo === "todos") {
-                // Se escolheu todos, passa o cache completo
                 renderizarLinhasTabelaHistorico(historicoAgendamentosCache);
             } else {
-                // Filtra o cache retendo apenas correspondências ao id do coordenador selecionado
                 const filtrados = historicoAgendamentosCache.filter(item => item.coordenadorId === coordIdAlvo);
                 renderizarLinhasTabelaHistorico(filtrados);
             }
