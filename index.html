@@ -82,17 +82,23 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-semibold mb-1 text-zinc-700">Responsável / Coordenador</label>
-                            <select id="aluno-coordenador" onchange="carregarHorariosDisponiveis(this.value)" class="w-full p-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-zinc-400 outline-none">
+                            <select id="aluno-coordenador" onchange="popularDatasDisponiveisDoCoordenador(this.value)" class="w-full p-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-zinc-400 outline-none">
                                 <option value="">Selecione o responsável...</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold mb-1 text-zinc-700">Horários de Atendimento Disponíveis</label>
+                            <label class="block text-sm font-semibold mb-1 text-zinc-700">Escolha a Data Disponível</label>
+                            <select id="aluno-data-calendario" onchange="buscarHorariosPorDataAluno(this.value)" class="w-full p-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-zinc-400 outline-none">
+                                <option value="">Selecione o coordenador primeiro...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-zinc-700">Horários Disponíveis para esta Data</label>
                             <select id="aluno-periodo" required class="w-full p-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-zinc-400 outline-none">
-                                <option value="">Selecione o horário...</option>
+                                <option value="">Selecione a data primeiro...</option>
                             </select>
                         </div>
                     </div>
@@ -137,7 +143,6 @@
             <div id="box-historico-coordenador" class="bg-white p-6 rounded-xl shadow-sm border border-zinc-200 hidden space-y-4 scroll-mt-16">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
                     <h3 class="text-xl font-bold text-zinc-700">Histórico Geral</h3>
-                    
                     <div class="flex items-center gap-2 text-xs">
                         <label class="font-bold text-zinc-600">Filtrar por Profissional:</label>
                         <select id="filtro-historico-coordenador" onchange="aplicarFiltroTabelaHistorico(this.value)" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
@@ -145,7 +150,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left border border-zinc-200">
                         <thead class="bg-zinc-100 text-zinc-700 uppercase text-xs">
@@ -202,24 +206,29 @@
                                 <input type="text" id="nome-coord" placeholder="Nome do Coordenador" required class="w-full p-2 border border-zinc-300 rounded text-xs bg-white">
                                 <input type="email" id="email-coord" placeholder="E-mail" required class="w-full p-2 border border-zinc-300 rounded text-xs bg-white">
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 gap-2">
                                 <select id="coord-curso" required class="w-full p-2 border border-zinc-300 rounded text-xs bg-white">
                                     <option value="">Vincular ao Curso...</option>
                                 </select>
-                                <select id="horario-dia-semana" required class="w-full p-2 border border-zinc-300 rounded text-xs bg-white">
-                                    <option value="">Escolha o dia da semana...</option>
-                                    <option value="Segunda-Feira">Segunda-Feira</option>
-                                    <option value="Terça-Feira">Terça-Feira</option>
-                                    <option value="Quarta-Feira">Quarta-Feira</option>
-                                    <option value="Quinta-Feira">Quinta-Feira</option>
-                                    <option value="Sexta-Feira">Sexta-Feira</option>
-                                </select>
+                            </div>
+
+                            <div class="border p-3 rounded-lg bg-zinc-100/50 border-zinc-300 mt-2 space-y-2">
+                                <p class="text-xs font-bold text-zinc-800">🗓️ Adicionar Datas e Horários à Agenda:</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <input type="date" id="horario-data-especifica" class="p-1.5 border border-zinc-300 rounded text-xs bg-white outline-none">
+                                    <button type="button" onclick="adicionarDataLoteAgendaTemporaria()" class="bg-zinc-700 text-white font-bold text-xs p-1.5 rounded hover:bg-zinc-600 transition">
+                                        ➕ Adicionar esta Data à Lista
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 shadow-inner p-2 bg-zinc-200/60 rounded-lg" id="container-10-horarios"></div>
+                                
+                                <div class="text-[10px] text-zinc-600 bg-white p-2 rounded border hidden space-y-1" id="lista-lotes-temporaria">
+                                    <p class="font-bold border-b pb-1">Datas preparadas para envio:</p>
+                                    <div id="corpo-lotes-temp"></div>
+                                </div>
                             </div>
                             
-                            <p class="text-xs font-bold text-zinc-700 mt-2">Defina os horários de atendimento (Até 10):</p>
-                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 shadow-inner p-2 bg-zinc-200/60 rounded-lg" id="container-10-horarios"></div>
-                            
-                            <button type="submit" id="btn-submit-coord" class="w-full bg-zinc-800 text-white p-2 rounded text-sm font-bold hover:bg-zinc-700 transition">Salvar Coordenador</button>
+                            <button type="submit" id="btn-submit-coord" class="w-full bg-zinc-800 text-white p-2 rounded text-sm font-bold hover:bg-zinc-700 transition">Salvar Coordenador (Gravar Todas as Datas)</button>
                         </form>
                     </div>
 
@@ -235,18 +244,15 @@
 
                 <div class="border-t border-zinc-200 pt-6">
                     <h3 class="text-lg font-bold text-zinc-900 mb-4 border-b pb-2 text-zinc-700">🗂️ Listas de Registros Ativos para Alteração e Exclusão</h3>
-                    
                     <div class="grid grid-cols-1 gap-6">
                         <div class="bg-zinc-50 p-4 rounded-xl border border-zinc-200">
                             <h4 class="font-bold text-sm text-zinc-700 mb-2">Lista de Cursos</h4>
                             <div class="max-h-40 overflow-y-auto border bg-white rounded-lg text-xs" id="crud-lista-cursos"></div>
                         </div>
-
                         <div class="bg-zinc-50 p-4 rounded-xl border border-zinc-200">
-                            <h4 class="font-bold text-sm text-zinc-700 mb-2">Lista de Coordenadores e Seus Horários</h4>
+                            <h4 class="font-bold text-sm text-zinc-700 mb-2">Lista de Datas de Atendimento por Coordenador</h4>
                             <div class="max-h-60 overflow-y-auto border bg-white rounded-lg text-xs" id="crud-lista-coordenadores"></div>
                         </div>
-
                         <div class="bg-zinc-50 p-4 rounded-xl border border-zinc-200">
                             <h4 class="font-bold text-sm text-zinc-700 mb-2">Lista de Assuntos Acadêmicos</h4>
                             <div class="max-h-40 overflow-y-auto border bg-white rounded-lg text-xs" id="crud-lista-categorias"></div>
@@ -283,6 +289,9 @@
         let chart2 = null;
         let unsubscribeAtendimentos = null;
 
+        // Array para reter na memória local os lotes temporários de datas/horas antes do submit final
+        let loteDatasTemporarioAdmin = [];
+
         const SENHA_COORDENADOR = "coord123";
         const SENHA_ADMIN = "admin123";
 
@@ -296,7 +305,6 @@
             `;
         }
 
-        // Atrelando o ouvinte direto no JavaScript estruturado de forma nativa e reativa
         document.getElementById('filtro-fila-coordenador').addEventListener('change', () => {
             escutarAgendamentosTempoReal();
         });
@@ -375,7 +383,6 @@
             const formAgendamento = document.getElementById('form-agendamento');
             const boxCurso = document.getElementById('box-aluno-curso');
             const boxCategoria = document.getElementById('box-aluno-categoria');
-            const boxHorarios = document.getElementById('box-agendamento-horarios');
             const flagFinanceiro = document.getElementById('flag-financeiro');
 
             flagFinanceiro.classList.add('hidden');
@@ -385,34 +392,110 @@
                 formAgendamento.classList.remove('hidden');
                 boxCurso.classList.remove('hidden');
                 boxCategoria.classList.remove('hidden');
-                boxHorarios.classList.remove('hidden');
-                document.getElementById('aluno-curso').required = true;
-                document.getElementById('aluno-categoria').required = true;
                 loadCoordenadoresNoSelect();
             } else if (setor === "Financeiro") {
                 flagFinanceiro.classList.remove('hidden');
-                boxCurso.classList.add('hidden');
-                boxCategoria.classList.add('hidden');
-                boxHorarios.classList.add('hidden');
             }
         };
 
         function loadCoordenadoresNoSelect() {
             const select = document.getElementById('aluno-coordenador');
+            const nomesUnicos = [];
+            const filtrados = coordenadoresCache.filter(c => {
+                if(!nomesUnicos.includes(c.nome)) {
+                    nomesUnicos.push(c.nome);
+                    return true;
+                }
+                return false;
+            });
+
             select.innerHTML = '<option value="">Escolha o responsável...</option>' + 
-                coordenadoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                filtrados.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
         }
 
-        window.carregarHorariosDisponiveis = function(coordId) {
+        window.popularDatasDisponiveisDoCoordenador = function(nomeCoordenador) {
+            const selectData = document.getElementById('aluno-data-calendario');
             const selectPeriodo = document.getElementById('aluno-periodo');
-            const coord = coordenadoresCache.find(c => c.id === coordId);
-            if (!coord || !coord.horarios) return;
+            
+            selectPeriodo.innerHTML = '<option value="">Selecione a data primeiro...</option>';
 
-            const listaHoras = coord.horarios.split(',').map(h => h.trim()).filter(h => h !== "");
-            const diaSemana = coord.diaSemana || "Dia";
+            if(!nomeCoordenador) {
+                selectData.innerHTML = '<option value="">Selecione o coordenador primeiro...</option>';
+                return;
+            }
 
-            selectPeriodo.innerHTML = '<option value="">Selecione o horário disponível...</option>' +
-                listaHoras.map(hora => `<option value="${diaSemana} - ${hora}">${diaSemana} às ${hora}</option>`).join('');
+            const agendasDoCoordenador = coordenadoresCache.filter(c => c.nome === nomeCoordenador && c.dataEspecifica);
+
+            if(agendasDoCoordenador.length === 0) {
+                selectData.innerHTML = '<option value="">❌ Nenhuma data disponível cadastrada.</option>';
+                return;
+            }
+
+            agendasDoCoordenador.sort((a, b) => a.dataEspecifica.localeCompare(b.dataEspecifica));
+
+            selectData.innerHTML = '<option value="">Escolha a data...</option>' + 
+                agendasDoCoordenador.map(c => {
+                    const [ano, mes, dia] = c.dataEspecifica.split('-');
+                    return `<option value="${c.dataEspecifica}">${dia}/${mes}/${ano}</option>`;
+                }).join('');
+        };
+
+        window.buscarHorariosPorDataAluno = function(dataSelecionada) {
+            const selectPeriodo = document.getElementById('aluno-periodo');
+            const nomeCoordenador = document.getElementById('aluno-coordenador').value;
+
+            if(!nomeCoordenador || !dataSelecionada) return;
+
+            const correspondencia = coordenadoresCache.find(c => c.nome === nomeCoordenador && c.dataEspecifica === dataSelecionada);
+
+            if(!correspondencia || !correspondencia.horarios) {
+                selectPeriodo.innerHTML = '<option value="">❌ Sem horários livres.</option>';
+                return;
+            }
+
+            const listaHoras = correspondencia.horarios.split(',').map(h => h.trim()).filter(h => h !== "");
+            const [ano, mes, dia] = dataSelecionada.split('-');
+            const dataFormatadaBR = `${dia}/${mes}/${ano}`;
+
+            selectPeriodo.innerHTML = '<option value="">Selecione o horário...</option>' +
+                listaHoras.map(hora => `<option value="${dataFormatadaBR} às ${hora}">${hora}</option>`).join('');
+        };
+
+        // --- ENGINES DO ADMIN: MULTI-DATALOTES REATIVOS ---
+        window.adicionarDataLoteAgendaTemporaria = function() {
+            const dataInp = document.getElementById('horario-data-especifica').value;
+            if(!dataInp) { alert("Escolha uma data no calendário antes!"); return; }
+
+            let horasArray = [];
+            for(let i=1; i<=10; i++) {
+                const val = document.getElementById(`h-input-${i}`).value.trim();
+                if(val) horasArray.push(val);
+            }
+
+            if(horasArray.length === 0) { alert("Insira pelo menos um horário de atendimento para esta data!"); return; }
+
+            const [ano, mes, dia] = dataInp.split('-');
+            
+            // Armazena no lote estruturado local
+            loteDatasTemporarioAdmin.push({
+                dataEspecifica: dataInp,
+                horarios: horasArray.join(', ')
+            });
+
+            // Atualiza a visualização do lote no painel do Admin
+            const boxVisual = document.getElementById('lista-lotes-temporaria');
+            const corpoVisual = document.getElementById('corpo-lotes-temp');
+            boxVisual.classList.remove('hidden');
+
+            corpoVisual.innerHTML += `
+                <div class="p-1 bg-zinc-100 rounded border border-zinc-200 flex justify-between items-center">
+                    <span>📅 <strong>${dia}/${mes}/${ano}</strong> - Horários: [ ${horasArray.join(', ')} ]</span>
+                </div>
+            `;
+
+            // Limpa apenas os inputs de horários e data para o próximo preenchimento
+            document.getElementById('horario-data-especifica').value = "";
+            for(let i=1; i<=10; i++) document.getElementById(`h-input-${i}`).value = "";
         };
 
         // --- SUBMIT: CURSO ---
@@ -423,7 +506,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "cursos", id), { nome });
-                    alert("Curso atualizado com sucesso!");
+                    alert("Curso atualizado!");
                 } else {
                     await addDoc(collection(db, "cursos"), { nome });
                     alert("Curso adicionado!");
@@ -435,33 +518,55 @@
             } catch (err) { console.error(err); }
         });
 
-        // --- SUBMIT: COORDENADOR ---
+        // --- SUBMIT: COORDENADOR (PROCESSAMENTO EM LOTE DEFINITIVO) ---
         document.getElementById('form-coordenador').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('edit-coord-id').value;
-            const nome = document.getElementById('nome-coord').value;
-            const email = document.getElementById('email-coord').value;
+            const nome = document.getElementById('nome-coord').value.trim();
+            const email = document.getElementById('email-coord').value.trim();
             const cursoId = document.getElementById('coord-curso').value;
-            const diaSemana = document.getElementById('horario-dia-semana').value;
-            
-            let horasArray = [];
-            for(let i=1; i<=10; i++) {
-                const val = document.getElementById(`h-input-${i}`).value.trim();
-                if(val) horasArray.push(val);
+
+            // Se o usuário esqueceu de clicar em adicionar lote mas preencheu o campo avulso da data
+            const dataAvulsa = document.getElementById('horario-data-especifica').value;
+            if(dataAvulsa && loteDatasTemporarioAdmin.length === 0) {
+                alert("Por favor, clique primeiro no botão 'Adicionar esta Data à Lista' para registrar seus horários!");
+                return;
             }
-            const horarios = horasArray.join(', ');
+
+            if(loteDatasTemporarioAdmin.length === 0) {
+                alert("Adicione pelo menos um lote de data e horário para salvar a agenda deste coordenador!");
+                return;
+            }
 
             try {
                 if(id) {
-                    await updateDoc(doc(db, "coordenadores", id), { nome, email, cursoId, diaSemana, horarios });
-                    alert("Coordenador atualizado!");
+                    // Modo Edição: Atualiza apenas o lote principal aberto no formulário
+                    const primeiraData = loteDatasTemporarioAdmin[0];
+                    await updateDoc(doc(db, "coordenadores", id), { 
+                        nome, email, cursoId, 
+                        dataEspecifica: primeiraData.dataEspecifica, 
+                        horarios: primeiraData.horarios 
+                    });
+                    alert("Data de atendimento do coordenador reajustada!");
                 } else {
-                    await addDoc(collection(db, "coordenadores"), { nome, email, cursoId, diaSemana, horarios });
-                    alert("Coordenador cadastrado!");
+                    // Modo Cadastro: Grava todas as N datas adicionadas como documentos individuais no Firebase
+                    for (const lote of loteDatasTemporarioAdmin) {
+                        await addDoc(collection(db, "coordenadores"), {
+                            nome, email, cursoId,
+                            dataEspecifica: lote.dataEspecifica,
+                            horarios: lote.horarios
+                        });
+                    }
+                    alert(`Sucesso! Foram cadastradas ${loteDatasTemporarioAdmin.length} datas de atendimento para a agenda de ${nome}.`);
                 }
+
+                // Limpeza e Reset Geral
+                loteDatasTemporarioAdmin = [];
                 document.getElementById('form-coordenador').reset();
                 document.getElementById('edit-coord-id').value = "";
                 document.getElementById('btn-submit-coord').innerText = "Salvar Coordenador";
+                document.getElementById('lista-lotes-temporaria').classList.add('hidden');
+                document.getElementById('corpo-lotes-temp').innerHTML = "";
                 await carregarCoordenadores();
             } catch (err) { console.error(err); }
         });
@@ -474,7 +579,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "categorias", id), { nome });
-                    alert("Assunto updated!");
+                    alert("Assunto atualizado!");
                 } else {
                     await addDoc(collection(db, "categorias"), { nome });
                     alert("Assunto salvo!");
@@ -486,7 +591,7 @@
             } catch (err) { console.error(err); }
         });
 
-        // --- CARREGADORES E SISTEMA CRUD ---
+        // --- CARREGADORES CRUD ---
         async function carregarCursos() {
             const querySnapshot = await getDocs(collection(db, "cursos"));
             cursosCache = [];
@@ -515,19 +620,25 @@
             coordenadoresCache = [];
             querySnapshot.forEach(doc => coordenadoresCache.push({id: doc.id, ...doc.data()}));
 
+            // Ordena a listagem do CRUD por profissional e data cronológica
+            coordenadoresCache.sort((a,b) => a.nome.localeCompare(b.nome) || a.dataEspecifica.localeCompare(b.dataEspecifica));
+
             const containerCrud = document.getElementById('crud-lista-coordenadores');
-            containerCrud.innerHTML = coordenadoresCache.map(c => `
+            containerCrud.innerHTML = coordenadoresCache.map(c => {
+                const [ano, mes, dia] = (c.dataEspecifica || "---").split('-');
+                const dataExibicao = c.dataEspecifica ? `${dia}/${mes}/${ano}` : "Sem data";
+                return `
                 <div class="flex justify-between items-center p-2 border-b border-zinc-200 hover:bg-zinc-100">
                     <div>
                         <strong>👨‍🏫 ${c.nome}</strong> <span class="text-zinc-500">(${c.email})</span>
-                        <div class="text-[10px] text-zinc-700 font-medium">🕒 ${c.diaSemana}: [ ${c.horarios || 'Nenhum'} ]</div>
+                        <div class="text-[10px] text-zinc-700 font-medium">📅 Agenda: ${dataExibicao} | Horários livres: [ ${c.horarios || 'Nenhum'} ]</div>
                     </div>
                     <div class="flex gap-1">
                         <button onclick="prepararEdicaoCoord('${c.id}')" class="bg-zinc-500 text-white px-2 py-0.5 rounded text-[10px] hover:bg-zinc-600">Editar</button>
                         <button onclick="excluirRegistroGeral('coordenadores', '${c.id}')" class="bg-red-700 text-white px-2 py-0.5 rounded text-[10px] hover:bg-red-800">Excluir</button>
                     </div>
                 </div>
-            `).join('') || '<p class="p-2 text-zinc-400 italic">Nenhum coordenador salvo.</p>';
+            `}).join('') || '<p class="p-2 text-zinc-400 italic">Nenhuma agenda cadastrada.</p>';
 
             atualizarSelectsCoordenadores();
         }
@@ -535,14 +646,22 @@
         function atualizarSelectsCoordenadores() {
             const filtroHistoricoSelect = document.getElementById('filtro-historico-coordenador');
             if(filtroHistoricoSelect) {
+                const listagemUnicaHistorico = [];
+                coordenadoresCache.forEach(c => {
+                    if(!listagemUnicaHistorico.find(x => x.nome === c.nome)) listagemUnicaHistorico.push(c);
+                });
                 filtroHistoricoSelect.innerHTML = '<option value="todos">Todos os Coordenadores</option>' +
-                    coordenadoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                    listagemUnicaHistorico.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
             }
             
             const filtroFilaSelect = document.getElementById('filtro-fila-coordenador');
             if(filtroFilaSelect) {
+                const listagemUnicaFila = [];
+                coordenadoresCache.forEach(c => {
+                    if(!listagemUnicaFila.find(x => x.nome === c.nome)) listagemUnicaFila.push(c);
+                });
                 filtroFilaSelect.innerHTML = '<option value="todos">Exibir Todos</option>' +
-                    coordenadoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                    listagemUnicaFila.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
             }
         }
 
@@ -590,7 +709,7 @@
             document.getElementById('nome-coord').value = c.nome;
             document.getElementById('email-coord').value = c.email;
             document.getElementById('coord-curso').value = c.cursoId;
-            document.getElementById('horario-dia-semana').value = c.diaSemana;
+            document.getElementById('horario-data-especifica').value = c.dataEspecifica;
             
             for(let i=1; i<=10; i++) document.getElementById(`h-input-${i}`).value = "";
             if(c.horarios) {
@@ -599,7 +718,11 @@
                     if(index < 10) document.getElementById(`h-input-${index+1}`).value = hora;
                 });
             }
-            document.getElementById('btn-submit-coord').innerText = "Atualizar Dados 🔄";
+
+            // Popula a memória local temporária de edição com a data atual dele
+            loteDatasTemporarioAdmin = [{ dataEspecifica: c.dataEspecifica, horarios: c.horarios }];
+
+            document.getElementById('btn-submit-coord').innerText = "Atualizar Dados desta Data 🔄";
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -616,12 +739,25 @@
         window.loadCoordenadoresPorCurso = function(cursoId) {
             const select = document.getElementById('aluno-coordenador');
             const filtrados = coordenadoresCache.filter(c => c.cursoId === cursoId);
-            if(filtrados.length === 0) {
+            
+            const nomesUnicos = [];
+            const filtradosUnicos = filtrados.filter(c => {
+                if(!nomesUnicos.includes(c.nome)) {
+                    nomesUnicos.push(c.nome);
+                    return true;
+                }
+                return false;
+            });
+
+            if(filtradosUnicos.length === 0) {
                 select.innerHTML = '<option value="">Nenhum coordenador disponível</option>';
                 return;
             }
             select.innerHTML = '<option value="">Escolha seu coordenador...</option>' + 
-                filtrados.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                filtradosUnicos.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            
+            document.getElementById('aluno-data-calendario').innerHTML = '<option value="">Selecione o coordenador primeiro...</option>';
+            document.getElementById('aluno-periodo').innerHTML = '<option value="">Selecione a data primeiro...</option>';
         };
 
         // --- SUBMIT AGENDAMENTO ALUNO ---
@@ -634,45 +770,45 @@
             
             const cursoId = document.getElementById('aluno-curso').value;
             const categoria = document.getElementById('aluno-categoria').value;
-            const coordenadorId = document.getElementById('aluno-coordenador').value;
+            const nomeCoordenador = document.getElementById('aluno-coordenador').value;
             const periodo = document.getElementById('aluno-periodo').value; 
-            const coordObj = coordenadoresCache.find(c => c.id === coordenadorId);
+            const coordObj = coordenadoresCache.find(c => c.nome === nomeCoordenador);
 
             try {
                 const qVerificacao = query(
                     collection(db, "agendamentos"), 
-                    where("coordenadorId", "==", coordenadorId),
+                    where("nomeCoordenador", "==", nomeCoordenador),
                     where("periodo", "==", periodo),
                     where("status", "==", "pendente")
                 );
                 const snapshotConcorrencia = await getDocs(qVerificacao);
 
                 if (!snapshotConcorrencia.empty) {
-                    alert(`🚨 CONFLITO DE HORÁRIO: Outro aluno já efetuou reserva para este coordenador no horário "${periodo}". Por favor, selecione outro horário.`);
+                    alert(`🚨 CONFLITO DE HORÁRIO: Outro aluno já efetuou reserva para este coordenador na data/horário "${periodo}". Por favor, selecione outro horário.`);
                     return;
                 }
 
                 await addDoc(collection(db, "agendamentos"), {
-                    alunoNome, alunoRA, alunoTelefone, setor, cursoId, coordenadorId, categoria, periodo,
+                    alunoNome, alunoRA, alunoTelefone, setor, cursoId, nomeCoordenador, categoria, periodo,
                     status: "pendente", anotacoesCoordenador: "", dataHora: new Date().toISOString()
                 });
 
                 const assunto = encodeURIComponent(`[Fila ${setor}] Agendamento Confirmado`);
-                const corpo = encodeURIComponent(`Olá,\nO aluno ${alunoNome} (Tel: ${alunoTelefone}) reservou com sucesso o horário: ${periodo}.`);
-                alert("Agendamento efetuado!");
-                window.location.href = `mailto:${coordObj.email}?subject=${assunto}&body=${corpo}`;
+                const corpo = encodeURIComponent(`Olá,\nO aluno ${alunoNome} reservou com sucesso o horário: ${periodo}.`);
+                alert("Agendamento efetuado com sucesso!");
+                if(coordObj) window.location.href = `mailto:${coordObj.email}?subject=${assunto}&body=${corpo}`;
+                
                 document.getElementById('form-agendamento').reset();
-                document.getElementById('box-agendamento-horarios').classList.add('hidden');
                 document.getElementById('form-agendamento').classList.add('hidden');
                 document.getElementById('aluno-setor').value = "";
             } catch (err) { console.error(err); }
         });
 
-        // 🛠️ FILTRAGEM INSTANTÂNEA E REAL-TIME ATUALIZADA
+        // Fila do Coordenador ao Vivo
         function escutarAgendamentosTempoReal() {
             if(unsubscribeAtendimentos) unsubscribeAtendimentos();
             
-            const filtroFilaId = document.getElementById('filtro-fila-coordenador').value;
+            const filtroFilaNome = document.getElementById('filtro-fila-coordenador').value;
             const q = query(collection(db, "agendamentos"));
             const container = document.getElementById('lista-atendimentos-pendentes');
 
@@ -687,13 +823,12 @@
                     const id = docSnap.id;
                     
                     if (data.status === "pendente" || data.status === "cancelado_pelo_aluno") {
-                        const coordId = data.coordenadorId || "nao_alocado";
+                        const cName = data.nomeCoordenador || "Responsável Geral";
                         
-                        // Trava reativa de comparação
-                        if (filtroFilaId === "todos" || filtroFilaId === coordId) {
+                        if (filtroFilaNome === "todos" || filtroFilaNome === cName) {
                             possuiAlunosFiltrados = true;
-                            if (!filasPorCoordenador[coordId]) filasPorCoordenador[coordId] = [];
-                            filasPorCoordenador[coordId].push({ id, ...data });
+                            if (!filasPorCoordenador[cName]) filasPorCoordenador[cName] = [];
+                            filasPorCoordenador[cName].push({ id, ...data });
                         }
                     }
                 });
@@ -703,13 +838,12 @@
                     return;
                 }
 
-                if (filtroFilaId !== "todos") {
-                    const agendamentosDiretos = filasPorCoordenador[filtroFilaId] || [];
-                    const coordName = coordenadoresCache.find(c => c.id === filtroFilaId)?.nome || "Coordenador";
+                if (filtroFilaNome !== "todos") {
+                    const agendamentosDiretos = filasPorCoordenador[filtroFilaNome] || [];
                     
                     const tituloFilaUnica = document.createElement('h3');
                     tituloFilaUnica.className = "font-bold text-zinc-800 text-sm border-b pb-2 mb-3 text-zinc-600";
-                    tituloFilaUnica.innerHTML = `📋 Exibindo fila exclusiva de: <strong>${coordName}</strong>`;
+                    tituloFilaUnica.innerHTML = `📋 Exibindo fila exclusiva de: <strong>${filtroFilaNome}</strong>`;
                     container.appendChild(tituloFilaUnica);
 
                     agendamentosDiretos.forEach(data => {
@@ -717,13 +851,12 @@
                     });
                 } 
                 else {
-                    for (const coordId in filasPorCoordenador) {
-                        const coordName = coordenadoresCache.find(c => c.id === coordId)?.nome || "Responsável Geral";
-                        const agendamentosDoCoord = filasPorCoordenador[coordId];
+                    for (const cName in filasPorCoordenador) {
+                        const agendamentosDoCoord = filasPorCoordenador[cName];
 
                         const secaoCoordenador = document.createElement('div');
                         secaoCoordenador.className = "mb-6 border-l-4 border-zinc-600 pl-4 bg-white p-4 rounded-r-xl shadow-xs space-y-3";
-                        secaoCoordenador.innerHTML = `<h3 class="font-bold text-zinc-800 text-base border-b pb-2">👨‍🏫 Fila de: <span class="text-zinc-700">${coordName}</span></h3>`;
+                        secaoCoordenador.innerHTML = `<h3 class="font-bold text-zinc-800 text-base border-b pb-2">👨‍🏫 Fila de: <span class="text-zinc-700">${cName}</span></h3>`;
 
                         agendamentosDoCoord.forEach((data) => {
                             secaoCoordenador.appendChild(criarCardAlunoVisual(data));
@@ -745,7 +878,7 @@
                 <div>
                     <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeColor}">${badgeTxt}</span>
                     <h4 class="font-bold text-zinc-900 mt-1">${data.alunoNome} <span class="text-xs font-normal text-zinc-500">(RA: ${data.alunoRA} | Tel: ${data.alunoTelefone})</span></h4>
-                    <p class="text-xs text-zinc-600 mt-0.5"><strong>Setor:</strong> ${data.setor} | <strong>Horário Reservado:</strong> ${data.periodo}</p>
+                    <p class="text-xs text-zinc-600 mt-0.5"><strong>Setor:</strong> ${data.setor} | <strong>Data/Horário:</strong> ${data.periodo}</p>
                     <p class="text-xs text-zinc-700"><strong>Assunto:</strong> ${data.categoria}</p>
                 </div>
                 <div class="w-full md:w-auto flex flex-col gap-2">
@@ -844,11 +977,11 @@
             });
         }
 
-        window.aplicarFiltroTabelaHistorico = function(coordIdAlvo) {
-            if(coordIdAlvo === "todos") {
+        window.aplicarFiltroTabelaHistorico = function(nomeCoordAlvo) {
+            if(nomeCoordAlvo === "todos") {
                 renderizarLinesTabelaHistorico(historicoAgendamentosCache);
             } else {
-                const filtrados = historicoAgendamentosCache.filter(item => item.coordenadorId === coordIdAlvo);
+                const filtrados = historicoAgendamentosCache.filter(item => item.nomeCoordenador === nomeCoordAlvo);
                 renderizarLinesTabelaHistorico(filtrados);
             }
         };
