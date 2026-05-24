@@ -41,7 +41,7 @@
                 
                 <div class="p-4 bg-zinc-50 border border-zinc-300 rounded-xl mb-6 space-y-2">
                     <label class="block text-sm font-bold text-zinc-900">
-                        📌 Antes de iniciar sua solicitação de atendimento, por favor escolha qual the setor desejado:
+                        📌 Antes de iniciar sua solicitação de atendimento, por favor escolha qual o setor desejado:
                     </label>
                     <select id="aluno-setor" required onchange="filtrarSetorAluno(this.value)" class="w-full md:w-1/2 p-2.5 border border-zinc-400 rounded-lg bg-white focus:ring-2 focus:ring-zinc-500 font-medium outline-none">
                         <option value="">Selecione o setor...</option>
@@ -115,16 +115,26 @@
 
         <section id="view-coordenador" class="view-section hidden space-y-6">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-zinc-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-zinc-900">Painel de Atendimento Ativo</h2>
-                    <button onclick="alternarVisibilidadeHistorico()" class="bg-zinc-800 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-zinc-700 font-medium transition shadow-xs">Ver Histórico Geral 📂</button>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b pb-3 border-zinc-100">
+                    <div>
+                        <h2 class="text-2xl font-bold text-zinc-900">Painel de Atendimento Ativo</h2>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+                        <label class="font-bold text-zinc-700">Filtrar Fila por Coordenador:</label>
+                        <select id="filtro-fila-coordenador" onchange="escutarAgendamentosTempoReal()" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
+                            <option value="todos">Exibir Todos</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="space-y-4" id="lista-atendimentos-pendentes">
                     <p class="text-zinc-500 text-center py-4">Nenhum aluno na fila de espera no momento.</p>
                 </div>
+                <div class="pt-4 flex justify-end">
+                    <button onclick="alternarVisibilidadeHistorico()" class="bg-zinc-800 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-zinc-700 font-medium transition shadow-xs">Ver Histórico Geral 📂</button>
+                </div>
             </div>
 
-            <div id="box-historico-coordenador" class="bg-white p-6 rounded-xl shadow-sm border border-zinc-200 hidden space-y-4">
+            <div id="box-historico-coordenador" class="bg-white p-6 rounded-xl shadow-sm border border-zinc-200 hidden space-y-4 scroll-mt-16">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
                     <h3 class="text-xl font-bold text-zinc-700">Histórico Geral</h3>
                     
@@ -141,7 +151,8 @@
                         <thead class="bg-zinc-100 text-zinc-700 uppercase text-xs">
                             <tr>
                                 <th class="p-3 border-b">Aluno / RA</th>
-                                <th class="p-3 border-b">Telefone / Celular</th> <th class="p-3 border-b">Setor / Assunto</th>
+                                <th class="p-3 border-b">Telefone / Celular</th>
+                                <th class="p-3 border-b">Setor / Assunto</th>
                                 <th class="p-3 border-b">Horário escolhido</th>
                                 <th class="p-3 border-b">Status</th>
                                 <th class="p-3 border-b">Parecer / Notas</th>
@@ -458,7 +469,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "categorias", id), { nome });
-                    alert("Assunto atualizado!");
+                    alert("Assunto updated!");
                 } else {
                     await addDoc(collection(db, "categorias"), { nome });
                     alert("Assunto salvo!");
@@ -513,9 +524,19 @@
                 </div>
             `).join('') || '<p class="p-2 text-zinc-400 italic">Nenhum coordenador salvo.</p>';
 
-            const filtroSelect = document.getElementById('filtro-historico-coordenador');
-            if(filtroSelect) {
-                filtroSelect.innerHTML = '<option value="todos">Todos os Coordenadores</option>' +
+            atualizarSelectsCoordenadores();
+        }
+
+        function atualizarSelectsCoordenadores() {
+            const filtroHistoricoSelect = document.getElementById('filtro-historico-coordenador');
+            if(filtroHistoricoSelect) {
+                filtroHistoricoSelect.innerHTML = '<option value="todos">Todos os Coordenadores</option>' +
+                    coordenadoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+            }
+            
+            const filtroFilaSelect = document.getElementById('filtro-fila-coordenador');
+            if(filtroFilaSelect) {
+                filtroFilaSelect.innerHTML = '<option value="todos">Exibir Todos</option>' +
                     coordenadoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
             }
         }
@@ -577,15 +598,14 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.excluirRegistroGeral = async function(colecao, id) {
+        window.excluirRegistroGeral = function(colecao, id) {
             if(!confirm(`Tem certeza absoluta que deseja remover este registro?`)) return;
-            try {
-                await deleteDoc(doc(db, colecao, id));
+            deleteDoc(doc(db, colecao, id)).then(() => {
                 alert("Registro removido.");
                 if(colecao === 'cursos') carregarCursos();
                 if(colecao === 'coordenadores') carregarCoordenadores();
                 if(colecao === 'categorias') carregarCategorias();
-            } catch(e) { console.error(e); }
+            }).catch(e => console.error(e));
         };
 
         window.loadCoordenadoresPorCurso = function(cursoId) {
@@ -643,9 +663,11 @@
             } catch (err) { console.error(err); }
         });
 
-        // Fila do Coordenador ao Vivo
+        // Fila do Coordenador ao Vivo (Filtro Ajustado Conforme Solicitação)
         function escutarAgendamentosTempoReal() {
             if(unsubscribeAtendimentos) unsubscribeAtendimentos();
+            
+            const filtroFilaId = document.getElementById('filtro-fila-coordenador').value;
             const q = query(collection(db, "agendamentos"));
             const container = document.getElementById('lista-atendimentos-pendentes');
 
@@ -658,13 +680,17 @@
                     const id = docSnap.id;
                     if (data.status === "pendente" || data.status === "cancelado_pelo_aluno") {
                         const coordId = data.coordenadorId || "nao_alocado";
-                        if (!filasPorCoordenador[coordId]) filasPorCoordenador[coordId] = [];
-                        filasPorCoordenador[coordId].push({ id, ...data });
+                        
+                        // 🛠️ COMPARAÇÃO CORRIGIDA: Só insere na fila se corresponder ao id filtrado ou se "todos" estiver ativo
+                        if (filtroFilaId === "todos" || filtroFilaId === coordId) {
+                            if (!filasPorCoordenador[coordId]) filasPorCoordenador[coordId] = [];
+                            filasPorCoordenador[coordId].push({ id, ...data });
+                        }
                     }
                 });
 
                 if (Object.keys(filasPorCoordenador).length === 0) {
-                    container.innerHTML = '<p class="text-zinc-500 text-center py-4">Fila vazia.</p>';
+                    container.innerHTML = '<p class="text-zinc-500 text-center py-4">Nenhum aluno localizado para o filtro selecionado.</p>';
                     return;
                 }
 
@@ -739,6 +765,11 @@
             box.classList.toggle('hidden');
             if (box.classList.contains('hidden')) return;
 
+            // 📍 ROLAGEM SUAVE MODIFICADA CONFORME SOLICITAÇÃO
+            setTimeout(() => {
+                box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+
             await carregarDadosHistoricoBanco();
         };
 
@@ -758,13 +789,12 @@
                 });
 
                 document.getElementById('filtro-historico-coordenador').value = "todos";
-                renderizarLinhasTabelaHistorico(historicoAgendamentosCache);
+                renderizarLinesTabelaHistorico(historicoAgendamentosCache);
                 
             } catch(e) { console.error(e); }
         }
 
-        // 📝 Função que renderiza a tabela de histórico com a célula do telefone integrada
-        function renderizarLinhasTabelaHistorico(listaDados) {
+        function renderizarLinesTabelaHistorico(listaDados) {
             const corpoTabela = document.getElementById('tabela-historico-corpo');
             corpoTabela.innerHTML = '';
 
@@ -778,7 +808,8 @@
                 tr.className = "border-b border-zinc-200 hover:bg-zinc-50 text-xs";
                 tr.innerHTML = `
                     <td class="p-3"><strong>${d.alunoNome}</strong><br><span class="text-[10px] text-zinc-500">RA: ${d.alunoRA}</span></td>
-                    <td class="p-3 text-zinc-700 font-medium">${d.alunoTelefone || '<span class="text-zinc-400 italic">Não informado</span>'}</td> <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-200 text-zinc-800">${d.setor}</span><br><span class="text-[11px] font-medium text-zinc-600">${d.categoria}</span></td>
+                    <td class="p-3 text-zinc-700 font-medium">${d.alunoTelefone || '<span class="text-zinc-400 italic">Não informado</span>'}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-200 text-zinc-800">${d.setor}</span><br><span class="text-[11px] font-medium text-zinc-600">${d.categoria}</span></td>
                     <td class="p-3 text-zinc-600">${d.periodo}</td>
                     <td class="p-3"><span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${d.status === 'finalizado' ? 'bg-zinc-700 text-white' : 'bg-red-100 text-red-800'}">${d.status === 'finalizado' ? 'Concluído' : 'Cancelado'}</span></td>
                     <td class="p-3 italic text-zinc-600 max-w-xs truncate" title="${d.anotacoesCoordenador || ''}">${d.anotacoesCoordenador || 'Sem observações.'}</td>
@@ -789,10 +820,10 @@
 
         window.aplicarFiltroTabelaHistorico = function(coordIdAlvo) {
             if(coordIdAlvo === "todos") {
-                renderizarLinhasTabelaHistorico(historicoAgendamentosCache);
+                renderizarLinesTabelaHistorico(historicoAgendamentosCache);
             } else {
                 const filtrados = historicoAgendamentosCache.filter(item => item.coordenadorId === coordIdAlvo);
-                renderizarLinhasTabelaHistorico(filtrados);
+                renderizarLinesTabelaHistorico(filtrados);
             }
         };
 
