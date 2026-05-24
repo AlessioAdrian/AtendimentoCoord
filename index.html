@@ -121,7 +121,7 @@
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
                         <label class="font-bold text-zinc-700">Filtrar Fila por Coordenador:</label>
-                        <select id="filtro-fila-coordenador" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
+                        <select id="filtro-fila-coordenador" onchange="escutarAgendamentosTempoReal()" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
                             <option value="todos">Exibir Todos</option>
                         </select>
                     </div>
@@ -277,7 +277,7 @@
 
         let cursosCache = [];
         let coordenadoresCache = [];
-        let categoriasCache = [];
+        let categoriesCache = [];
         let historicoAgendamentosCache = []; 
         let chart1 = null;
         let chart2 = null;
@@ -527,7 +527,6 @@
             atualizarSelectsCoordenadores();
         }
 
-        // 🛠️ CORREÇÃO CRUCIAL AQUI: Mapear o 'c.id' real (gerado pelo Firebase) no value da tag option!
         function atualizarSelectsCoordenadores() {
             const filtroHistoricoSelect = document.getElementById('filtro-historico-coordenador');
             if(filtroHistoricoSelect) {
@@ -545,7 +544,7 @@
         async function carregarCategorias() {
             const querySnapshot = await getDocs(collection(db, "categorias"));
             categoriasCache = [];
-            querySnapshot.forEach(doc => categoriasCache.push({id: doc.id, ...doc.data()}));
+            querySnapshot.forEach(doc => categoriesCache.push({id: doc.id, ...doc.data()}));
             
             const selectAlunoCat = document.getElementById('aluno-categoria');
             if(selectAlunoCat) {
@@ -664,7 +663,7 @@
             } catch (err) { console.error(err); }
         });
 
-        // 🛠️ FUNÇÃO DA FILA AO VIVO CORRIGIDA: Filtro por ID interno do Firebase
+        // Fila do Coordenador ao Vivo (Atualizado para filtragem instantânea)
         function escutarAgendamentosTempoReal() {
             if(unsubscribeAtendimentos) unsubscribeAtendimentos();
             
@@ -685,7 +684,6 @@
                     if (data.status === "pendente" || data.status === "cancelado_pelo_aluno") {
                         const coordId = data.coordenadorId || "nao_alocado";
                         
-                        // Executa a comparação robusta por IDs criptográficos
                         if (filtroFilaId === "todos" || filtroFilaId === coordId) {
                             possuiAlunosFiltrados = true;
                             if (!filasPorCoordenador[coordId]) filasPorCoordenador[coordId] = [];
@@ -699,7 +697,6 @@
                     return;
                 }
 
-                // Se escolheu um coordenador específico, renderiza a lista limpa e direta
                 if (filtroFilaId !== "todos") {
                     const agendamentosDiretos = filasPorCoordenador[filtroFilaId] || [];
                     const coordName = coordenadoresCache.find(c => c.id === filtroFilaId)?.nome || "Coordenador";
@@ -713,7 +710,6 @@
                         container.appendChild(criarCardAlunoVisual(data));
                     });
                 } 
-                // Se escolheu "Exibir Todos", agrupa por blocos com caixas delimitadoras
                 else {
                     for (const coordId in filasPorCoordenador) {
                         const coordName = coordenadoresCache.find(c => c.id === coordId)?.nome || "Responsável Geral";
