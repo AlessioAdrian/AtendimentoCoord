@@ -121,7 +121,7 @@
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
                         <label class="font-bold text-zinc-700">Filtrar Fila por Coordenador:</label>
-                        <select id="filtro-fila-coordenador" onchange="escutarAgendamentosTempoReal()" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
+                        <select id="filtro-fila-coordenador" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
                             <option value="todos">Exibir Todos</option>
                         </select>
                     </div>
@@ -277,7 +277,7 @@
 
         let cursosCache = [];
         let coordenadoresCache = [];
-        let categoriesCache = [];
+        let categoriasCache = [];
         let historicoAgendamentosCache = []; 
         let chart1 = null;
         let chart2 = null;
@@ -295,6 +295,11 @@
                 </div>
             `;
         }
+
+        // Atrelando o ouvinte direto no JavaScript estruturado de forma nativa e reativa
+        document.getElementById('filtro-fila-coordenador').addEventListener('change', () => {
+            escutarAgendamentosTempoReal();
+        });
 
         window.switchView = function(view) {
             if ((view === 'coordenador' || view === 'dashboard') && document.getElementById('btn-nav-coordenador').classList.contains('hidden')) {
@@ -418,7 +423,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "cursos", id), { nome });
-                    alert("Curso updated com sucesso!");
+                    alert("Curso atualizado com sucesso!");
                 } else {
                     await addDoc(collection(db, "cursos"), { nome });
                     alert("Curso adicionado!");
@@ -449,7 +454,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "coordenadores", id), { nome, email, cursoId, diaSemana, horarios });
-                    alert("Coordenador updated!");
+                    alert("Coordenador atualizado!");
                 } else {
                     await addDoc(collection(db, "coordenadores"), { nome, email, cursoId, diaSemana, horarios });
                     alert("Coordenador cadastrado!");
@@ -544,7 +549,7 @@
         async function carregarCategorias() {
             const querySnapshot = await getDocs(collection(db, "categorias"));
             categoriasCache = [];
-            querySnapshot.forEach(doc => categoriesCache.push({id: doc.id, ...doc.data()}));
+            querySnapshot.forEach(doc => categoriasCache.push({id: doc.id, ...doc.data()}));
             
             const selectAlunoCat = document.getElementById('aluno-categoria');
             if(selectAlunoCat) {
@@ -663,7 +668,7 @@
             } catch (err) { console.error(err); }
         });
 
-        // Fila do Coordenador ao Vivo (Atualizado para filtragem instantânea)
+        // 🛠️ FILTRAGEM INSTANTÂNEA E REAL-TIME ATUALIZADA
         function escutarAgendamentosTempoReal() {
             if(unsubscribeAtendimentos) unsubscribeAtendimentos();
             
@@ -684,6 +689,7 @@
                     if (data.status === "pendente" || data.status === "cancelado_pelo_aluno") {
                         const coordId = data.coordenadorId || "nao_alocado";
                         
+                        // Trava reativa de comparação
                         if (filtroFilaId === "todos" || filtroFilaId === coordId) {
                             possuiAlunosFiltrados = true;
                             if (!filasPorCoordenador[coordId]) filasPorCoordenador[coordId] = [];
