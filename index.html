@@ -121,7 +121,7 @@
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
                         <label class="font-bold text-zinc-700">Filtrar Fila por Coordenador:</label>
-                        <select id="filtro-fila-coordenador" onchange="escutarAgendamentosTempoReal()" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
+                        <select id="filtro-fila-coordenador" class="p-1.5 border border-zinc-300 rounded bg-white text-zinc-800 outline-none font-medium">
                             <option value="todos">Exibir Todos</option>
                         </select>
                     </div>
@@ -449,7 +449,7 @@
             try {
                 if(id) {
                     await updateDoc(doc(db, "coordenadores", id), { nome, email, cursoId, diaSemana, horarios });
-                    alert("Coordenador atualizado!");
+                    alert("Coordenador updated!");
                 } else {
                     await addDoc(collection(db, "coordenadores"), { nome, email, cursoId, diaSemana, horarios });
                     alert("Coordenador cadastrado!");
@@ -527,6 +527,7 @@
             atualizarSelectsCoordenadores();
         }
 
+        // 🛠️ CORREÇÃO CRUCIAL AQUI: Mapear o 'c.id' real (gerado pelo Firebase) no value da tag option!
         function atualizarSelectsCoordenadores() {
             const filtroHistoricoSelect = document.getElementById('filtro-historico-coordenador');
             if(filtroHistoricoSelect) {
@@ -663,7 +664,7 @@
             } catch (err) { console.error(err); }
         });
 
-        // Fila do Coordenador ao Vivo (Filtro Ajustado Conforme Solicitação)
+        // 🛠️ FUNÇÃO DA FILA AO VIVO CORRIGIDA: Filtro por ID interno do Firebase
         function escutarAgendamentosTempoReal() {
             if(unsubscribeAtendimentos) unsubscribeAtendimentos();
             
@@ -673,65 +674,90 @@
 
             unsubscribeAtendimentos = onSnapshot(q, (snapshot) => {
                 container.innerHTML = '';
+                
                 const filasPorCoordenador = {};
+                let possuiAlunosFiltrados = false;
 
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const id = docSnap.id;
+                    
                     if (data.status === "pendente" || data.status === "cancelado_pelo_aluno") {
                         const coordId = data.coordenadorId || "nao_alocado";
                         
-                        // 🛠️ COMPARAÇÃO CORRIGIDA: Só insere na fila se corresponder ao id filtrado ou se "todos" estiver ativo
+                        // Executa a comparação robusta por IDs criptográficos
                         if (filtroFilaId === "todos" || filtroFilaId === coordId) {
+                            possuiAlunosFiltrados = true;
                             if (!filasPorCoordenador[coordId]) filasPorCoordenador[coordId] = [];
                             filasPorCoordenador[coordId].push({ id, ...data });
                         }
                     }
                 });
 
-                if (Object.keys(filasPorCoordenador).length === 0) {
-                    container.innerHTML = '<p class="text-zinc-500 text-center py-4">Nenhum aluno localizado para o filtro selecionado.</p>';
+                if (!possuiAlunosFiltrados) {
+                    container.innerHTML = '<p class="text-zinc-500 text-center py-4 font-medium italic">Nenhum aluno aguardando atendimento nesta fila.</p>';
                     return;
                 }
 
-                for (const coordId in filasPorCoordenador) {
-                    const coordName = coordenadoresCache.find(c => c.id === coordId)?.nome || "Responsável Geral";
-                    const agendamentosDoCoord = filasPorCoordenador[coordId];
+                // Se escolheu um coordenador específico, renderiza a lista limpa e direta
+                if (filtroFilaId !== "todos") {
+                    const agendamentosDiretos = filasPorCoordenador[filtroFilaId] || [];
+                    const coordName = coordenadoresCache.find(c => c.id === filtroFilaId)?.nome || "Coordenador";
+                    
+                    const tituloFilaUnica = document.createElement('h3');
+                    tituloFilaUnica.className = "font-bold text-zinc-800 text-sm border-b pb-2 mb-3 text-zinc-600";
+                    tituloFilaUnica.innerHTML = `📋 Exibindo fila exclusiva de: <strong>${coordName}</strong>`;
+                    container.appendChild(tituloFilaUnica);
 
-                    const secaoCoordenador = document.createElement('div');
-                    secaoCoordenador.className = "mb-6 border-l-4 border-zinc-600 pl-4 bg-white p-4 rounded-r-xl shadow-xs space-y-3";
-                    secaoCoordenador.innerHTML = `<h3 class="font-bold text-zinc-800 text-base border-b pb-2">👨‍🏫 Fila de: <span class="text-zinc-700">${coordName}</span></h3>`;
-
-                    agendamentosDoCoord.forEach((data) => {
-                        const isCancelado = data.status === "cancelado_pelo_aluno";
-                        const badgeColor = isCancelado ? 'bg-red-100 text-red-800 border-red-300' : 'bg-zinc-100 text-zinc-800 border-zinc-300';
-                        const badgeTxt = isCancelado ? '❌ CANCELADO PELO ALUNO' : 'Aguardando';
-
-                        const cardAluno = document.createElement('div');
-                        cardAluno.className = `p-3 border rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-sm ${isCancelado ? 'bg-red-50/50' : 'bg-zinc-50/50'}`;
-                        cardAluno.innerHTML = `
-                            <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeColor}">${badgeTxt}</span>
-                                <h4 class="font-bold text-zinc-900 mt-1">${data.alunoNome} <span class="text-xs font-normal text-zinc-500">(RA: ${data.alunoRA} | Tel: ${data.alunoTelefone})</span></h4>
-                                <p class="text-xs text-zinc-600 mt-0.5"><strong>Setor:</strong> ${data.setor} | <strong>Horário Reservado:</strong> ${data.periodo}</p>
-                                <p class="text-xs text-zinc-700"><strong>Assunto:</strong> ${data.categoria}</p>
-                            </div>
-                            <div class="w-full md:w-auto flex flex-col gap-2">
-                                ${isCancelado ? `
-                                    <button onclick="arquivarCancelado('${data.id}')" class="bg-zinc-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-zinc-700">Confirmar Ciente / Arquivar</button>
-                                ` : `
-                                    <textarea id="note-${data.id}" placeholder="Notas do parecer..." class="w-full md:w-64 p-2 text-xs bg-white border border-zinc-300 rounded h-14 resize-none outline-none focus:border-zinc-500"></textarea>
-                                    <div class="flex gap-2 justify-end">
-                                        <button onclick="finalizarAtendimento('${data.id}')" class="bg-zinc-800 text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-zinc-700">Finalizar</button>
-                                    </div>
-                                `}
-                            </div>
-                        `;
-                        secaoCoordenador.appendChild(cardAluno);
+                    agendamentosDiretos.forEach(data => {
+                        container.appendChild(criarCardAlunoVisual(data));
                     });
-                    container.appendChild(secaoCoordenador);
+                } 
+                // Se escolheu "Exibir Todos", agrupa por blocos com caixas delimitadoras
+                else {
+                    for (const coordId in filasPorCoordenador) {
+                        const coordName = coordenadoresCache.find(c => c.id === coordId)?.nome || "Responsável Geral";
+                        const agendamentosDoCoord = filasPorCoordenador[coordId];
+
+                        const secaoCoordenador = document.createElement('div');
+                        secaoCoordenador.className = "mb-6 border-l-4 border-zinc-600 pl-4 bg-white p-4 rounded-r-xl shadow-xs space-y-3";
+                        secaoCoordenador.innerHTML = `<h3 class="font-bold text-zinc-800 text-base border-b pb-2">👨‍🏫 Fila de: <span class="text-zinc-700">${coordName}</span></h3>`;
+
+                        agendamentosDoCoord.forEach((data) => {
+                            secaoCoordenador.appendChild(criarCardAlunoVisual(data));
+                        });
+                        container.appendChild(secaoCoordenador);
+                    }
                 }
             });
+        }
+
+        function criarCardAlunoVisual(data) {
+            const isCancelado = data.status === "cancelado_pelo_aluno";
+            const badgeColor = isCancelado ? 'bg-red-100 text-red-800 border-red-300' : 'bg-zinc-100 text-zinc-800 border-zinc-300';
+            const badgeTxt = isCancelado ? '❌ CANCELADO PELO ALUNO' : 'Aguardando';
+
+            const cardAluno = document.createElement('div');
+            cardAluno.className = `p-3 border rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-sm mb-2 ${isCancelado ? 'bg-red-50/50' : 'bg-zinc-50/50'}`;
+            cardAluno.innerHTML = `
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeColor}">${badgeTxt}</span>
+                    <h4 class="font-bold text-zinc-900 mt-1">${data.alunoNome} <span class="text-xs font-normal text-zinc-500">(RA: ${data.alunoRA} | Tel: ${data.alunoTelefone})</span></h4>
+                    <p class="text-xs text-zinc-600 mt-0.5"><strong>Setor:</strong> ${data.setor} | <strong>Horário Reservado:</strong> ${data.periodo}</p>
+                    <p class="text-xs text-zinc-700"><strong>Assunto:</strong> ${data.categoria}</p>
+                </div>
+                <div class="w-full md:w-auto flex flex-col gap-2">
+                    ${isCancelado ? `
+                        <button onclick="arquivarCancelado('${data.id}')" class="bg-zinc-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-zinc-700">Confirmar Ciente / Arquivar</button>
+                    ` : `
+                        <textarea id="note-${data.id}" placeholder="Notas do parecer..." class="w-full md:w-64 p-2 text-xs bg-white border border-zinc-300 rounded h-14 resize-none outline-none focus:border-zinc-500"></textarea>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="finalizarAtendimento('${data.id}')" class="bg-zinc-800 text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-zinc-700">Finalizar</button>
+                        </div>
+                    `}
+                </div>
+            `;
+            return cardAluno;
         }
 
         window.finalizarAtendimento = async function(id) {
@@ -759,13 +785,11 @@
             } catch(e) { console.error(e); }
         };
 
-        // --- VISUALIZAÇÃO E FILTRO DO HISTÓRICO GERAL ---
         window.alternarVisibilidadeHistorico = async function() {
             const box = document.getElementById('box-historico-coordenador');
             box.classList.toggle('hidden');
             if (box.classList.contains('hidden')) return;
 
-            // 📍 ROLAGEM SUAVE MODIFICADA CONFORME SOLICITAÇÃO
             setTimeout(() => {
                 box.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 50);
@@ -827,7 +851,6 @@
             }
         };
 
-        // Dashboard Estatístico
         async function renderizarDashboard() {
             try {
                 const querySnapshot = await getDocs(collection(db, "agendamentos"));
